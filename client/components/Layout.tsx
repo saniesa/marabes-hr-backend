@@ -12,6 +12,8 @@ import {
   X,
   Settings,
   BarChart3,
+  Settings as SettingsIcon,
+  Activity,
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
 
@@ -68,6 +70,18 @@ const Layout = () => {
       path: "/profile",
       icon: <Settings size={20} />,
       allowed: ["ADMIN", "EMPLOYEE"],
+    },
+    {
+      name: "Settings",
+      path: "/settings",
+      icon: <SettingsIcon size={20} />,
+      allowed: ["ADMIN", "EMPLOYEE"],
+    },
+    {
+      name: "Activity",
+      path: "/activity",
+      icon: <Activity size={20} />,
+      allowed: ["ADMIN"],
     },
   ];
 

@@ -23,6 +23,8 @@ import Courses from "./pages/Courses";
 import Layout from "./components/Layout";
 import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
+import Settings from "./pages/Settings";
+import ActivityLog from "./pages/ActivityLog";
 
 interface AuthContextType {
   user: Employee | null;
@@ -108,6 +110,8 @@ const App = () => {
             <Route path="evaluations" element={<Evaluations />} />
             <Route path="courses" element={<Courses />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="activity" element={<ActivityLog />} />
           </Route>
         </Routes>
       </HashRouter>
