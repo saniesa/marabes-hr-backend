@@ -11,6 +11,7 @@ router.post("/", async (req, res) => {
   const {
     name,
     email,
+    password,
     role,
     avatarUrl,
     jobPosition,
@@ -20,11 +21,17 @@ router.post("/", async (req, res) => {
     address,
     department,
   } = req.body;
+
+  // Hash password
+  const bcrypt = require("bcrypt");
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   const [result] = await pool.query(
-    "INSERT INTO users (name, email, role, avatarUrl, jobPosition, birthday, dateHired, phone, address, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO users (name, email, password, role, avatarUrl, jobPosition, birthday, dateHired, phone, address, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       name,
       email,
+      hashedPassword,
       role,
       avatarUrl,
       jobPosition,
@@ -35,7 +42,8 @@ router.post("/", async (req, res) => {
       department,
     ]
   );
-  res.json({ id: result.insertId, ...req.body });
+
+  res.json({ id: result.insertId, ...req.body, password: undefined });
 });
 
 router.put("/:id", async (req, res) => {

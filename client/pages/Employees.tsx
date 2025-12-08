@@ -11,7 +11,7 @@ const Employees: React.FC = () => {
   const [selectedEmp, setSelectedEmp] = useState<Employee | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [formData, setFormData] = useState<Partial<Employee>>({});
+  const [formData, setFormData] = useState<Partial<Employee & { password?: string }>>({});
   const [activeTab, setActiveTab] = useState("Personal");
 
   useEffect(() => {
@@ -65,6 +65,7 @@ const Employees: React.FC = () => {
       setFormData({
         role: "EMPLOYEE",
         avatarUrl: `https://picsum.photos/200?random=${Date.now()}`,
+        password: "", // ensure password field exists for new employees
       });
       setIsEditMode(false);
     }
@@ -76,7 +77,11 @@ const Employees: React.FC = () => {
     if (isEditMode && formData.id) {
       await api.updateUser(formData as Employee);
     } else {
-      await api.addUser(formData as Omit<Employee, "id">);
+      if (!formData.password) {
+        alert("Password is required for new employees");
+        return;
+      }
+      await api.addUser(formData as Omit<Employee & { password: string }, "id">);
     }
     setIsModalOpen(false);
     loadEmployees();
@@ -225,7 +230,18 @@ const Employees: React.FC = () => {
                   }
                 />
               </div>
+
               <div className="grid grid-cols-2 gap-4">
+                <input
+                  required={!isEditMode}
+                  placeholder="Password"
+                  type="password"
+                  className="input-std"
+                  value={formData.password || ""}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                />
                 <input
                   required
                   placeholder="Position"
@@ -235,6 +251,9 @@ const Employees: React.FC = () => {
                     setFormData({ ...formData, jobPosition: e.target.value })
                   }
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <select
                   className="input-std"
                   value={formData.role}
@@ -245,8 +264,6 @@ const Employees: React.FC = () => {
                   <option value="EMPLOYEE">Employee</option>
                   <option value="ADMIN">Admin</option>
                 </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500">Birthday</label>
                   <input
@@ -258,6 +275,9 @@ const Employees: React.FC = () => {
                     }
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs text-gray-500">Date Hired</label>
                   <input
@@ -270,6 +290,7 @@ const Employees: React.FC = () => {
                   />
                 </div>
               </div>
+
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
@@ -310,14 +331,12 @@ const Employees: React.FC = () => {
             </div>
 
             <div className="flex border-b border-gray-200 mb-6">
-              {["Personal", "Job", "Time Off", "Training"].map((tab) => (
+              {['Personal', 'Job', 'Time Off', 'Training'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`flex-1 pb-3 text-sm font-medium ${
-                    activeTab === tab
-                      ? "text-mint-600 border-b-2 border-mint-600"
-                      : "text-gray-500"
+                    activeTab === tab ? 'text-mint-600 border-b-2 border-mint-600' : 'text-gray-500'
                   }`}
                 >
                   {tab}
@@ -326,47 +345,26 @@ const Employees: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              {activeTab === "Personal" && (
+              {activeTab === 'Personal' && (
                 <div className="space-y-3">
                   <InfoRow label="Email" value={selectedEmp.email} />
-                  <InfoRow label="Phone" value={selectedEmp.phone || "N/A"} />
-                  <InfoRow
-                    label="Address"
-                    value={selectedEmp.address || "N/A"}
-                  />
+                  <InfoRow label="Phone" value={selectedEmp.phone || 'N/A'} />
+                  <InfoRow label="Address" value={selectedEmp.address || 'N/A'} />
                   <InfoRow label="Birthday" value={selectedEmp.birthday} />
                 </div>
               )}
-              {activeTab === "Job" && (
+              {activeTab === 'Job' && (
                 <div className="space-y-3">
-                  <InfoRow
-                    label="Department"
-                    value={selectedEmp.department || "General"}
-                  />
+                  <InfoRow label="Department" value={selectedEmp.department || 'General'} />
                   <InfoRow label="Hired Date" value={selectedEmp.dateHired} />
                   <InfoRow label="Role" value={selectedEmp.role} />
-                  <div className="p-4 bg-yellow-50 rounded-lg text-sm text-yellow-800">
-                    Performance Review due next month.
-                  </div>
-                </div>
-              )}
-              {activeTab === "Time Off" && (
-                <div className="text-sm text-gray-500">
-                  <p>Total Balance: 20 Days</p>
-                  <p>Used: 5 Days</p>
-                  <p>Remaining: 15 Days</p>
-                </div>
-              )}
-              {activeTab === "Training" && (
-                <div className="text-sm text-gray-500">
-                  <p>Advanced Excel - Completed</p>
-                  <p>Security 101 - Pending</p>
                 </div>
               )}
             </div>
           </div>
         </div>
       )}
+
       <style>{`
         .input-std { width: 100%; padding: 0.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; outline: none; }
         .input-std:focus { border-color: #14b8a6; ring: 2px solid #14b8a6; }
@@ -379,9 +377,7 @@ const Employees: React.FC = () => {
 
 const InfoRow = ({ label, value }: { label: string; value: string }) => (
   <div className="flex flex-col">
-    <span className="text-xs text-gray-400 uppercase tracking-wider">
-      {label}
-    </span>
+    <span className="text-xs text-gray-400 uppercase tracking-wider">{label}</span>
     <span className="text-gray-800 font-medium">{value}</span>
   </div>
 );
