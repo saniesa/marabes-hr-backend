@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const pool = require("../db");
 
-// Get all scores or filter by userId/categoryId
+// Get all scores or by user/category
 router.get("/", async (req, res) => {
   try {
     const { userId, categoryId } = req.query;
@@ -28,43 +28,29 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Add new score
+// Add score
 router.post("/", async (req, res) => {
   try {
     const { userId, userName, categoryId, score, date, feedback } = req.body;
     const [result] = await pool.query(
-      "INSERT INTO scores (userId, userName, categoryId, score, date, feedback) VALUES (?, ?, ?, ?, ?, ?)",
-      [
-        parseInt(userId),
-        userName,
-        parseInt(categoryId),
-        parseInt(score),
-        date,
-        feedback || null,
-      ]
+      `INSERT INTO scores 
+      (userId,userName,categoryId,score,date,feedback) VALUES (?,?,?,?,?,?)`,
+      [parseInt(userId), userName, parseInt(categoryId), parseInt(score), date, feedback || null]
     );
 
     await pool.query(
-      "INSERT INTO notifications (userId, message, type, isRead, createdAt) VALUES (?, ?, ?, 0, NOW())",
+      `INSERT INTO notifications (userId,message,type,isRead,createdAt)
+       VALUES (?, ?, ?, 0, NOW())`,
       [parseInt(userId), `New evaluation score added: ${score}/100`, "info"]
     );
 
-    res.json({
-      id: result.insertId,
-      userId: parseInt(userId),
-      userName,
-      categoryId: parseInt(categoryId),
-      score: parseInt(score),
-      date,
-      feedback,
-    });
+    res.json({ id: result.insertId, userId: parseInt(userId), userName, categoryId: parseInt(categoryId), score: parseInt(score), date, feedback });
   } catch (err) {
-    console.error("Score insert error:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Get average score for a user
+// Average score per user
 router.get("/average/:userId", async (req, res) => {
   try {
     const [result] = await pool.query(
@@ -77,15 +63,12 @@ router.get("/average/:userId", async (req, res) => {
   }
 });
 
-// Get category statistics
+// Category statistics
 router.get("/category-stats", async (req, res) => {
   try {
     const [rows] = await pool.query(`
-      SELECT c.id, c.name, 
-        COUNT(s.id) as count,
-        ROUND(AVG(s.score)) as average,
-        MIN(s.score) as min,
-        MAX(s.score) as max
+      SELECT c.id, c.name, COUNT(s.id) as count,
+      ROUND(AVG(s.score)) as average, MIN(s.score) as min, MAX(s.score) as max
       FROM categories c
       LEFT JOIN scores s ON c.id = s.categoryId
       GROUP BY c.id, c.name
@@ -100,11 +83,7 @@ router.get("/category-stats", async (req, res) => {
 router.put("/:id", async (req, res) => {
   try {
     const { score, feedback } = req.body;
-    await pool.query("UPDATE scores SET score=?, feedback=? WHERE id=?", [
-      score,
-      feedback,
-      req.params.id,
-    ]);
+    await pool.query("UPDATE scores SET score=?, feedback=? WHERE id=?", [score, feedback, req.params.id]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

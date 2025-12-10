@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const bcrypt = require("bcrypt");
 
 router.get("/", async (req, res) => {
   const [rows] = await pool.query("SELECT * FROM users");
@@ -23,7 +24,6 @@ router.post("/", async (req, res) => {
   } = req.body;
 
   // Hash password
-  const bcrypt = require("bcrypt");
   const hashedPassword = await bcrypt.hash(password, 10);
 
   const [result] = await pool.query(
