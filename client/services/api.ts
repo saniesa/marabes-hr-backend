@@ -99,15 +99,69 @@ export const addCategory = async (name: string) => {
 };
 
 // Scores
-export const getScores = async (): Promise<UserScore[]> => {
-  const res = await axios.get(`${API_BASE}/scores`);
-  return res.data;
-};
 
-export const addScore = async (score: Omit<UserScore, "id">) => {
-  const res = await axios.post(`${API_BASE}/scores`, score);
+export const getScores = async (): Promise<UserScore[]> => {
+
+  const res = await axios.get(`${API_BASE}/scores`);
+
   return res.data;
+
 };
+ 
+export const getScoresByUser = async (userId: string): Promise<UserScore[]> => {
+
+  const res = await axios.get(`${API_BASE}/scores?userId=${userId}`);
+
+  return res.data;
+
+};
+ 
+export const getScoresByCategory = async (categoryId: string): Promise<UserScore[]> => {
+
+  const res = await axios.get(`${API_BASE}/scores?categoryId=${categoryId}`);
+
+  return res.data;
+
+};
+ 
+export const addScore = async (score: Omit<UserScore, 'id'>) => {
+
+  const res = await axios.post(`${API_BASE}/scores`, score);
+
+  return res.data;
+
+};
+ 
+export const updateScore = async (id: string, score: number, feedback?: string) => {
+
+  const res = await axios.put(`${API_BASE}/scores/${id}`, { score, feedback });
+
+  return res.data;
+
+};
+ 
+export const deleteScore = async (id: string) => {
+
+  await axios.delete(`${API_BASE}/scores/${id}`);
+
+};
+ 
+export const getUserAverageScore = async (userId: string) => {
+
+  const res = await axios.get(`${API_BASE}/scores/average/${userId}`);
+
+  return res.data;
+
+};
+ 
+export const getCategoryStats = async () => {
+
+  const res = await axios.get(`${API_BASE}/scores/category-stats`);
+
+  return res.data;
+
+};
+ 
 
 // Courses
 export const getCourses = async (): Promise<Course[]> => {

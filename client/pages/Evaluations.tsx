@@ -68,9 +68,15 @@ const Evaluations: React.FC = () => {
 
     setChartData(data);
   };
+const handleAddScore = async (e: React.FormEvent) => {
+  e.preventDefault();
+  console.log("Form submitted!", newScore);
+  if (!newScore.userId || !newScore.categoryId) {
+    alert("Please select employee and category");
+    return;
+  }
 
-  const handleAddScore = async (e: React.FormEvent) => {
-    e.preventDefault();
+  try {
     const emp = employees.find((e) => e.id === newScore.userId);
     if (!emp) return;
 
@@ -79,7 +85,7 @@ const Evaluations: React.FC = () => {
       userName: emp.name,
     });
 
-    setShowAddScore(false);
+    // reset form
     setNewScore({
       userId: "",
       categoryId: "",
@@ -87,8 +93,18 @@ const Evaluations: React.FC = () => {
       feedback: "",
       date: new Date().toISOString().split("T")[0],
     });
-    init();
-  };
+    setShowAddScore(false);
+
+    // refresh scores
+    const s = await api.getScores(); // make sure this matches your backend: "/scores"
+    setScores(s);
+    processChartData(categories, s);
+  } catch (err) {
+    console.error("Failed to add score:", err);
+    alert("Failed to add score. Check console for details.");
+  }
+};
+
 
   return (
     <div className="space-y-6">
@@ -225,21 +241,22 @@ const Evaluations: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="text-xs text-gray-500">Score (0-100)</label>
-                <input
-                  type="number"
-                  required
-                  min="0"
-                  max="100"
-                  className="input-std"
-                  value={newScore.score}
-                  onChange={(e) =>
-                    setNewScore({
-                      ...newScore,
-                      score: parseInt(e.target.value),
-                    })
-                  }
-                />
+                 <label className="text-xs text-gray-500">Score (0-100)</label>
+                 <input
+                     type="number"
+                     required
+                     min={0}
+                     max={100}
+                     className="input-std"
+                     value={newScore.score}
+                     onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                             setNewScore({
+                              ...newScore,
+                              score: isNaN(val) ? 0 : val,
+                              });
+                            }}
+                          />
               </div>
               <div>
                 <label className="text-xs text-gray-500">
