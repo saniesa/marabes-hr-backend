@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../App";
+import { useTheme } from "../pages/context/ThemeContext";
 import {
   Shield,
   Bell,
@@ -9,32 +10,51 @@ import {
   Lock,
   Save,
 } from "lucide-react";
+import * as api from "../services/api";
 
 const Settings: React.FC = () => {
-  const { user } = useAuth();
+  const { user, login } = useAuth();
+  const { theme, setTheme } = useTheme();
+
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
     weeklyReports: true,
     marketingEmails: false,
-    theme: "light",
+    theme: theme,
     language: "en",
     timezone: "UTC",
     autoLogout: "30",
     twoFactor: false,
     dataSharing: false,
   });
+
   const [message, setMessage] = useState("");
 
-  const handleSave = () => {
-    localStorage.setItem("app_settings", JSON.stringify(settings));
-    setMessage("Settings saved successfully!");
-    setTimeout(() => setMessage(""), 3000);
+  useEffect(() => {
+    setSettings((prev) => ({ ...prev, theme }));
+  }, [theme]);
+
+  const handleSave = async () => {
+    try {
+      if (user) {
+        const res = await api.updateTheme(user.id, settings.theme);
+        login(res.user.email, "");
+      }
+
+      localStorage.setItem("app_settings", JSON.stringify(settings));
+      setMessage("Settings saved successfully!");
+      setTimeout(() => setMessage(""), 3000);
+    } catch (err) {
+      console.error(err);
+      setMessage("Failed to save settings!");
+      setTimeout(() => setMessage(""), 3000);
+    }
   };
 
   const SettingSection = ({ title, icon, children }: any) => (
-    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
         {icon}
         {title}
       </h3>
@@ -45,9 +65,9 @@ const Settings: React.FC = () => {
   const ToggleSetting = ({ label, description, checked, onChange }: any) => (
     <div className="flex items-start justify-between">
       <div className="flex-1">
-        <p className="font-medium text-gray-800">{label}</p>
+        <p className="font-medium text-gray-800 dark:text-gray-100">{label}</p>
         {description && (
-          <p className="text-sm text-gray-500 mt-1">{description}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{description}</p>
         )}
       </div>
       <button
@@ -67,11 +87,11 @@ const Settings: React.FC = () => {
 
   const SelectSetting = ({ label, value, onChange, options }: any) => (
     <div className="flex items-center justify-between">
-      <label className="font-medium text-gray-800">{label}</label>
+      <label className="font-medium text-gray-800 dark:text-gray-100">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-mint-500 outline-none"
+        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-mint-500 outline-none"
       >
         {options.map((opt: any) => (
           <option key={opt.value} value={opt.value}>
@@ -85,9 +105,9 @@ const Settings: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Settings</h1>
         {message && (
-          <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg">
+          <div className="px-4 py-2 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 rounded-lg">
             {message}
           </div>
         )}
@@ -140,7 +160,10 @@ const Settings: React.FC = () => {
         <SelectSetting
           label="Theme"
           value={settings.theme}
-          onChange={(val: string) => setSettings({ ...settings, theme: val })}
+          onChange={(val: string) => {
+            setSettings({ ...settings, theme: val });
+            setTheme(val); // Apply theme
+          }}
           options={[
             { value: "light", label: "Light" },
             { value: "dark", label: "Dark" },
@@ -155,9 +178,7 @@ const Settings: React.FC = () => {
           }
           options={[
             { value: "en", label: "English" },
-            { value: "es", label: "Español" },
             { value: "fr", label: "Français" },
-            { value: "ar", label: "العربية" },
           ]}
         />
       </SettingSection>
@@ -220,8 +241,8 @@ const Settings: React.FC = () => {
             setSettings({ ...settings, dataSharing: val })
           }
         />
-        <div className="pt-4 border-t border-gray-200">
-          <button className="text-sm text-red-600 hover:text-red-700 font-medium">
+        <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+          <button className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-200 font-medium">
             Change Password
           </button>
         </div>
@@ -234,13 +255,13 @@ const Settings: React.FC = () => {
           icon={<Database className="text-mint-600" size={20} />}
         >
           <div className="space-y-3">
-            <button className="w-full px-4 py-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-left">
+            <button className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-left">
               Export All Data (CSV)
             </button>
-            <button className="w-full px-4 py-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-left">
+            <button className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-left">
               Backup Database
             </button>
-            <button className="w-full px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-left">
+            <button className="w-full px-4 py-3 bg-red-50 dark:bg-red-700 text-red-600 dark:text-red-200 rounded-lg hover:bg-red-100 dark:hover:bg-red-600 text-left">
               Clear All Notifications
             </button>
           </div>
@@ -251,7 +272,7 @@ const Settings: React.FC = () => {
       <div className="flex justify-end pt-4">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-6 py-3 bg-mint-600 text-white rounded-lg hover:bg-mint-700"
+          className="flex items-center gap-2 px-6 py-3 bg-mint-600 text-white rounded-lg hover:bg-mint-700 dark:bg-mint-600 dark:hover:bg-mint-700"
         >
           <Save size={18} />
           Save Settings

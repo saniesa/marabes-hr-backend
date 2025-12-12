@@ -8,7 +8,7 @@ import {
   AttendanceRecord,
 } from "../types";
 
-const API_BASE = "http://localhost:5000";
+const API_BASE = "http://localhost:5000/api"; // <-- added /api prefix
 
 // Set token in headers
 const setAuthToken = (token: string | null) => {
@@ -21,7 +21,7 @@ const setAuthToken = (token: string | null) => {
 
 // ===== AUTH =====
 export const login = async (email: string, password: string) => {
-  const res = await axios.post(`${API_BASE}/auth/login`, { email, password });
+  const res = await axios.post(`${API_BASE.replace("/api","")}/auth/login`, { email, password }); // auth can stay outside /api
   if (res.data.token) {
     localStorage.setItem("marabes_token", res.data.token);
     setAuthToken(res.data.token);
@@ -29,6 +29,13 @@ export const login = async (email: string, password: string) => {
   return res.data;
 };
 
+
+// Existing functions: login, logout, etc.
+
+export const updateTheme = async (userId: number, theme: string) => {
+  const res = await axios.patch(`${API_BASE}/auth/theme`, { userId, theme });
+  return res.data; // returns updated user
+};
 export const logout = () => {
   localStorage.removeItem("marabes_token");
   setAuthToken(null);
@@ -127,6 +134,11 @@ export const getUserAverageScore = async (userId: string) => {
 
 export const getCategoryStats = async () => {
   const res = await axios.get(`${API_BASE}/scores/category-stats`);
+  return res.data;
+};
+
+export const getGlobalTrend = async () => {
+  const res = await axios.get(`${API_BASE}/scores/global-trend`);
   return res.data;
 };
 

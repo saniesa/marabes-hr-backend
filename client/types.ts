@@ -35,13 +35,14 @@ export interface EvaluationCategory {
 }
 
 export interface UserScore {
-  id: number;
-  userId: number;
+  id: string;        // was number → must be string
+  userId: string;    // was number → must be string
   userName: string;
-  categoryId: number;
+  categoryId: string; // was number → must be string
   score: number;
   date: string;
   feedback?: string;
+  status: "PRESENT" | "ABSENT";
 }
 
 export interface Course {

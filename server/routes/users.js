@@ -4,10 +4,13 @@ const pool = require("../db");
 const bcrypt = require("bcrypt");
 
 router.get("/", async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM users");
-  res.json(rows);
+  try {
+    const [rows] = await pool.query("SELECT * FROM users");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
-
 router.post("/", async (req, res) => {
   const {
     name,

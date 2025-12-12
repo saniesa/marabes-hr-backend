@@ -1,17 +1,5 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-import {
-  HashRouter,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Employee } from "./types";
 import * as api from "./services/api";
 import Login from "./pages/Login";
@@ -25,6 +13,7 @@ import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import ActivityLog from "./pages/ActivityLog";
+import { ThemeProvider } from "./pages/context/ThemeContext"; // ✅ Wrap app with ThemeProvider
 
 interface AuthContextType {
   user: Employee | null;
@@ -90,32 +79,33 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
 const App = () => {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="employees" element={<Employees />} />
-            <Route path="time-off" element={<TimeOff />} />
-            <Route path="evaluations" element={<Evaluations />} />
-            <Route path="courses" element={<Courses />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="activity" element={<ActivityLog />} />
-          </Route>
-        </Routes>
-      </HashRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <HashRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="employees" element={<Employees />} />
+              <Route path="timeoff" element={<TimeOff />} />               <Route path="evaluations" element={<Evaluations />} />
+              <Route path="courses" element={<Courses />} />
+              <Route path="reports" element={<Reports />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="activity" element={<ActivityLog />} />
+            </Route>
+          </Routes>
+        </HashRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
