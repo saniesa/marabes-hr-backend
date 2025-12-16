@@ -86,6 +86,10 @@ export const updateTimeOffStatus = async (id: string, status: string, note?: str
   return res.data;
 };
 
+export const deleteTimeOffRequest = async (id: string) => {
+  const res = await axios.delete(`${API_BASE}/timeoff/${id}`);
+  return res.data;
+};
 // ===== CATEGORIES =====
 export const getCategories = async (): Promise<EvaluationCategory[]> => {
   const res = await axios.get(`${API_BASE}/categories`);
@@ -153,6 +157,16 @@ export const addCourse = async (course: Omit<Course, "id" | "enrolledCount">) =>
   return res.data;
 };
 
+export const assignCourse = async (userId: string, courseId: string) => {
+  const res = await axios.post(`${API_BASE}/enrollments/assign`, { userId, courseId });
+  return res.data;
+};
+
+export const updateCourseContent = async (id: string, content: any[]) => {
+  const res = await axios.put(`${API_BASE}/courses/${id}/content`, { content });
+  return res.data;
+};
+
 // ===== ENROLLMENTS =====
 export const getEnrollments = async (userId: string) => {
   const res = await axios.get(`${API_BASE}/enrollments/${userId}`);
@@ -183,4 +197,16 @@ export const clockOut = async (userId: string) => {
 export const getAttendanceHistory = async (userId: string) => {
   const res = await axios.get(`${API_BASE}/attendance/${userId}/history`);
   return res.data;
+};
+
+// Add to client/services/api.ts
+
+export const uploadFile = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await axios.post(`${API_BASE}/upload`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data.url; // Returns "http://localhost:5000/uploads/video-123.mp4"
 };

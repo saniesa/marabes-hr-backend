@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const pool = require("../db");
+const { logActivity } = require("./activity");
 
 // 1. GET ALL COURSES
 router.get("/", async (req, res) => {
@@ -35,6 +36,24 @@ router.get("/", async (req, res) => {
   }
 });
 
+// 4. UPDATE COURSE CONTENT (Modules/Chapters)
+router.put("/:id/content", async (req, res) => {
+  const { content } = req.body; // content will be a JSON array of chapters
+  try {
+    // We store the array as a JSON string in the LONGTEXT column
+    const jsonContent = JSON.stringify(content);
+    
+    await pool.query(
+      "UPDATE courses SET content = ? WHERE id = ?", 
+      [jsonContent, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Update Content Error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 2. ADD COURSE (Fixed for your table structure)
 router.post("/", async (req, res) => {
   try {
@@ -54,6 +73,8 @@ router.post("/", async (req, res) => {
         instructor || 'Marabes Expert'
       ]
     );
+    
+    await logActivity(req, "COURSE_CREATED", `Created course: ${req.body.title}`);
 
     res.json({ id: result.insertId, ...req.body, enrolledCount: 0 });
   } catch (err) {

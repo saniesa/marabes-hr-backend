@@ -64,12 +64,12 @@ const TimeOff: React.FC = () => {
     );
     loadRequests();
   };
-
-  const handleDelete = async (id: string) => {
-    if (!window.confirm("Delete this request?")) return;
-    await fetch(`http://localhost:5000/timeoff/${id}`, { method: "DELETE" });
-    loadRequests();
-  };
+  
+const handleDelete = async (id: string) => {
+  if (!window.confirm("Delete this request?")) return;
+  await api.deleteTimeOffRequest(id); // ✅ uses the new api function
+  loadRequests();
+};
 
   const handleExport = () => {
     const csvContent =
