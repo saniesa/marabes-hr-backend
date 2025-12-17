@@ -81,9 +81,7 @@ const Login: React.FC = () => {
           </div>
           
           <div className="text-xs text-center text-gray-400 mt-4">
-            {/* <p>Demo Admin: admin@marabes.com</p>
-            <p>Demo Employee: sarah@marabes.com</p>
-            <p>Password: any</p> */}
+          
           </div>
         </form>
       </div>

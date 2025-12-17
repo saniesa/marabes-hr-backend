@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../App";
-import { useTheme } from "../pages/context/ThemeContext";
 import {
   Shield,
   Bell,
@@ -14,14 +13,12 @@ import * as api from "../services/api";
 
 const Settings: React.FC = () => {
   const { user, login } = useAuth();
-  const { theme, setTheme } = useTheme();
 
   const [settings, setSettings] = useState({
     emailNotifications: true,
     pushNotifications: false,
     weeklyReports: true,
     marketingEmails: false,
-    theme: theme,
     language: "en",
     timezone: "UTC",
     autoLogout: "30",
@@ -31,14 +28,10 @@ const Settings: React.FC = () => {
 
   const [message, setMessage] = useState("");
 
-  useEffect(() => {
-    setSettings((prev) => ({ ...prev, theme }));
-  }, [theme]);
-
   const handleSave = async () => {
     try {
       if (user) {
-        const res = await api.updateTheme(user.id, settings.theme);
+        const res = await api.updateTheme(user.id, "light"); // just a placeholder
         login(res.user.email, "");
       }
 
@@ -53,8 +46,8 @@ const Settings: React.FC = () => {
   };
 
   const SettingSection = ({ title, icon, children }: any) => (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4 flex items-center gap-2">
+    <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+      <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
         {icon}
         {title}
       </h3>
@@ -65,9 +58,9 @@ const Settings: React.FC = () => {
   const ToggleSetting = ({ label, description, checked, onChange }: any) => (
     <div className="flex items-start justify-between">
       <div className="flex-1">
-        <p className="font-medium text-gray-800 dark:text-gray-100">{label}</p>
+        <p className="font-medium text-gray-800">{label}</p>
         {description && (
-          <p className="text-sm text-gray-500 dark:text-gray-300 mt-1">{description}</p>
+          <p className="text-sm text-gray-500 mt-1">{description}</p>
         )}
       </div>
       <button
@@ -87,11 +80,11 @@ const Settings: React.FC = () => {
 
   const SelectSetting = ({ label, value, onChange, options }: any) => (
     <div className="flex items-center justify-between">
-      <label className="font-medium text-gray-800 dark:text-gray-100">{label}</label>
+      <label className="font-medium text-gray-800">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-mint-500 outline-none"
+        className="px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-800 focus:ring-2 focus:ring-mint-500 outline-none"
       >
         {options.map((opt: any) => (
           <option key={opt.value} value={opt.value}>
@@ -105,19 +98,16 @@ const Settings: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Settings</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Settings</h1>
         {message && (
-          <div className="px-4 py-2 bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-200 rounded-lg">
+          <div className="px-4 py-2 bg-green-100 text-green-700 rounded-lg">
             {message}
           </div>
         )}
       </div>
 
       {/* Notifications Settings */}
-      <SettingSection
-        title="Notifications"
-        icon={<Bell className="text-mint-600" size={20} />}
-      >
+      <SettingSection title="Notifications" icon={<Bell className="text-mint-600" size={20} />}>
         <ToggleSetting
           label="Email Notifications"
           description="Receive notifications via email"
@@ -153,29 +143,11 @@ const Settings: React.FC = () => {
       </SettingSection>
 
       {/* Appearance Settings */}
-      <SettingSection
-        title="Appearance"
-        icon={<Palette className="text-mint-600" size={20} />}
-      >
-        <SelectSetting
-          label="Theme"
-          value={settings.theme}
-          onChange={(val: string) => {
-            setSettings({ ...settings, theme: val });
-            setTheme(val); // Apply theme
-          }}
-          options={[
-            { value: "light", label: "Light" },
-            { value: "dark", label: "Dark" },
-            { value: "auto", label: "Auto" },
-          ]}
-        />
+      <SettingSection title="Appearance" icon={<Palette className="text-mint-600" size={20} />}>
         <SelectSetting
           label="Language"
           value={settings.language}
-          onChange={(val: string) =>
-            setSettings({ ...settings, language: val })
-          }
+          onChange={(val: string) => setSettings({ ...settings, language: val })}
           options={[
             { value: "en", label: "English" },
             { value: "fr", label: "Français" },
@@ -184,16 +156,11 @@ const Settings: React.FC = () => {
       </SettingSection>
 
       {/* Regional Settings */}
-      <SettingSection
-        title="Regional"
-        icon={<Globe className="text-mint-600" size={20} />}
-      >
+      <SettingSection title="Regional" icon={<Globe className="text-mint-600" size={20} />}>
         <SelectSetting
           label="Timezone"
           value={settings.timezone}
-          onChange={(val: string) =>
-            setSettings({ ...settings, timezone: val })
-          }
+          onChange={(val: string) => setSettings({ ...settings, timezone: val })}
           options={[
             { value: "UTC", label: "UTC" },
             { value: "America/New_York", label: "Eastern Time" },
@@ -207,24 +174,17 @@ const Settings: React.FC = () => {
       </SettingSection>
 
       {/* Security Settings */}
-      <SettingSection
-        title="Security & Privacy"
-        icon={<Lock className="text-mint-600" size={20} />}
-      >
+      <SettingSection title="Security & Privacy" icon={<Lock className="text-mint-600" size={20} />}>
         <ToggleSetting
           label="Two-Factor Authentication"
           description="Add an extra layer of security to your account"
           checked={settings.twoFactor}
-          onChange={(val: boolean) =>
-            setSettings({ ...settings, twoFactor: val })
-          }
+          onChange={(val: boolean) => setSettings({ ...settings, twoFactor: val })}
         />
         <SelectSetting
           label="Auto Logout"
           value={settings.autoLogout}
-          onChange={(val: string) =>
-            setSettings({ ...settings, autoLogout: val })
-          }
+          onChange={(val: string) => setSettings({ ...settings, autoLogout: val })}
           options={[
             { value: "15", label: "15 minutes" },
             { value: "30", label: "30 minutes" },
@@ -237,12 +197,10 @@ const Settings: React.FC = () => {
           label="Data Sharing"
           description="Share anonymous usage data to improve the platform"
           checked={settings.dataSharing}
-          onChange={(val: boolean) =>
-            setSettings({ ...settings, dataSharing: val })
-          }
+          onChange={(val: boolean) => setSettings({ ...settings, dataSharing: val })}
         />
-        <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
-          <button className="text-sm text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-200 font-medium">
+        <div className="pt-4 border-t border-gray-200">
+          <button className="text-sm text-red-600 hover:text-red-700 font-medium">
             Change Password
           </button>
         </div>
@@ -250,18 +208,15 @@ const Settings: React.FC = () => {
 
       {/* Data Management */}
       {user?.role === "ADMIN" && (
-        <SettingSection
-          title="Data Management"
-          icon={<Database className="text-mint-600" size={20} />}
-        >
+        <SettingSection title="Data Management" icon={<Database className="text-mint-600" size={20} />}>
           <div className="space-y-3">
-            <button className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-left">
+            <button className="w-full px-4 py-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-left">
               Export All Data (CSV)
             </button>
-            <button className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 text-left">
+            <button className="w-full px-4 py-3 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 text-left">
               Backup Database
             </button>
-            <button className="w-full px-4 py-3 bg-red-50 dark:bg-red-700 text-red-600 dark:text-red-200 rounded-lg hover:bg-red-100 dark:hover:bg-red-600 text-left">
+            <button className="w-full px-4 py-3 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-left">
               Clear All Notifications
             </button>
           </div>
@@ -272,7 +227,7 @@ const Settings: React.FC = () => {
       <div className="flex justify-end pt-4">
         <button
           onClick={handleSave}
-          className="flex items-center gap-2 px-6 py-3 bg-mint-600 text-white rounded-lg hover:bg-mint-700 dark:bg-mint-600 dark:hover:bg-mint-700"
+          className="flex items-center gap-2 px-6 py-3 bg-mint-600 text-white rounded-lg hover:bg-mint-700"
         >
           <Save size={18} />
           Save Settings

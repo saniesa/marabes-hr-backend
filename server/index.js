@@ -22,6 +22,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
+const activityRoute = require("./routes/activity"); // Import the whole file
 
 // Auth (Public)
 app.use("/auth", require("./routes/auth")); 
@@ -35,6 +36,7 @@ app.use("/api/categories", require("./routes/category"));
  app.use("/api/enrollments", require("./routes/enrollment"));
  app.use("/api/courses", require("./routes/course"));         
 app.use("/api/attendance", require("./routes/attendance")); 
+app.use("/api/activity", activityRoute); // Register the route
 
 
 // 2. MAKE UPLOADS FOLDER PUBLIC (So frontend can play videos)

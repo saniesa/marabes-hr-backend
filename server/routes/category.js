@@ -1,19 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const pool = require("../db");
+const categoryController = require("../controllers/categoryController");
 
-router.get("/", async (req, res) => {
-  const [rows] = await pool.query("SELECT * FROM categories");
-  res.json(rows);
-});
-
-router.post("/", async (req, res) => {
-  const { name } = req.body;
-  const [result] = await pool.query(
-    "INSERT INTO categories (name) VALUES (?)",
-    [name]
-  );
-  res.json({ id: result.insertId, name });
-});
+router.get("/", categoryController.getAll);
+router.post("/", categoryController.create);
 
 module.exports = router;
