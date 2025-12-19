@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const { logActivity } = require("./activityController");
 
 exports.getAll = async (req, res) => {
   try {
@@ -35,16 +36,11 @@ exports.getByUser = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    console.log("Receiving Add Score Request:", req.body);
     let { userId, userName, categoryId, score, date, feedback } = req.body;
 
     const cleanUserId = isNaN(userId) ? userId : parseInt(userId);
     const cleanCategoryId = parseInt(categoryId); 
     const cleanScore = parseInt(score);
-
-    if (!cleanUserId || !cleanCategoryId || isNaN(cleanScore)) {
-      return res.status(400).json({ error: "Missing required fields (User, Category, or Score)" });
-    }
 
     const [result] = await pool.query(
       `INSERT INTO scores (userId, userName, categoryId, score, date, feedback) 
@@ -52,12 +48,18 @@ exports.create = async (req, res) => {
       [cleanUserId, userName, cleanCategoryId, cleanScore, date, feedback || null]
     );
 
-    console.log("✅ Score Added! ID:", result.insertId);
+    // FETCH CATEGORY NAME FOR LOGGING
+    const [cats] = await pool.query("SELECT name FROM categories WHERE id=?", [cleanCategoryId]);
+    const catName = cats[0]?.name || "Metric";
 
+    // LOG THE ACTIVITY
+    await logActivity(req, "SCORE_ADDED", `Evaluated ${userName} on ${catName}: ${cleanScore}/100`);
+
+    // NOTIFICATION
     try {
       await pool.query(
         "INSERT INTO notifications (userId, message, type, isRead, createdAt) VALUES (?, ?, ?, 0, NOW())",
-        [cleanUserId, `New Evaluation Score: ${cleanScore}/100`, "info"]
+        [cleanUserId, `New Evaluation Score: ${cleanScore}/100 in ${catName}`, "info"]
       );
     } catch (notifErr) {
       console.error("Notification failed:", notifErr.message);

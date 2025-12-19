@@ -10,6 +10,19 @@ import {
 
 const API_BASE = "http://localhost:5000/api"; // <-- added /api prefix
 
+// ==========================================
+// NEW SECURITY ADDITION (Interceptor)
+// This ensures the token is attached to every single request automatically.
+// ==========================================
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem("marabes_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+// ==========================================
+
 // Set token in headers
 const setAuthToken = (token: string | null) => {
   if (token) {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useAuth } from "../App";
-import * as api from "../services/api";
-import { Employee } from "../types";
+import { useAuth } from "../../App";
+import * as api from "../../services/api";
+import { Employee } from "../../types";
 import { Search, Plus, Trash2, Download, User, Edit, Users, Briefcase } from "lucide-react";
 
 const Employees: React.FC = () => {

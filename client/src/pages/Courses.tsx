@@ -4,7 +4,8 @@ import { Course, Employee } from "../types";
 import { 
   Users, PlayCircle, Plus, Trash2, X, Search, 
   Clock, BookOpen, CheckCircle, Lock, ShieldCheck, Check, Ban, UserPlus,
-  Edit, Edit3, Save, Video, FileText, UploadCloud, Layout
+  Edit, Edit3, Save, Video, FileText, UploadCloud, Layout,
+  RotateCw // <-- Added this import
 } from "lucide-react";
 import { useAuth } from "../App";
 import axios from "axios";
@@ -45,6 +46,7 @@ const Courses: React.FC = () => {
   // UI
   const [activeTab, setActiveTab] = useState<"browse" | "my-learning">("browse");
   const [search, setSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false); // <-- Added for refresh animation
   
   // Modals
   const [showFormModal, setShowFormModal] = useState(false);
@@ -74,6 +76,7 @@ const Courses: React.FC = () => {
   }, [user]);
 
   const loadData = async () => {
+    setIsRefreshing(true); // Start animation
     try {
         const c = await api.getCourses();
         const enrichedCourses = c.map((course: any) => ({
@@ -95,7 +98,12 @@ const Courses: React.FC = () => {
             res.data.forEach((e: any) => { statusMap[e.courseId] = e.status; });
             setEnrollmentStatus(statusMap);
         }
-    } catch (err) { console.error("Failed to load data", err); }
+    } catch (err) { 
+        console.error("Failed to load data", err); 
+    } finally {
+        // Short delay for the animation to look smooth
+        setTimeout(() => setIsRefreshing(false), 500);
+    }
   };
 
   // --- 1. OPEN MODES (VIEW vs EDIT) ---
@@ -245,15 +253,27 @@ const Courses: React.FC = () => {
         )}
       </div>
 
-      {/* TABS */}
+      {/* TABS & SEARCH (Refresh Icon Added Here) */}
       <div className="flex flex-col md:flex-row justify-between gap-4 border-b border-gray-200 pb-4">
           <div className="flex gap-4">
               <button onClick={() => setActiveTab("browse")} className={`pb-2 text-sm font-medium border-b-2 ${activeTab === "browse" ? "text-mint-600 border-mint-600" : "text-gray-500 border-transparent"}`}>Browse Catalog</button>
               <button onClick={() => setActiveTab("my-learning")} className={`pb-2 text-sm font-medium border-b-2 ${activeTab === "my-learning" ? "text-mint-600 border-mint-600" : "text-gray-500 border-transparent"}`}>My Learning</button>
           </div>
-          <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input type="text" placeholder="Search..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none" value={search} onChange={(e) => setSearch(e.target.value)}/>
+          
+          <div className="flex items-center gap-2"> {/* Added Flex container for search and refresh */}
+            <div className="relative w-full md:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <input type="text" placeholder="Search..." className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none" value={search} onChange={(e) => setSearch(e.target.value)}/>
+            </div>
+            
+            {/* NEW REFRESH BUTTON */}
+            <button 
+                onClick={loadData} 
+                className={`p-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-500 hover:text-mint-600 hover:bg-mint-50 transition-all ${isRefreshing ? 'opacity-50' : ''}`}
+                title="Refresh catalog"
+            >
+                <RotateCw size={18} className={isRefreshing ? "animate-spin" : ""} />
+            </button>
           </div>
       </div>
 
@@ -330,7 +350,6 @@ const Courses: React.FC = () => {
 
       {/* --- FULL PLAYER & EDITOR (FIXED FULLSCREEN Z-INDEX) --- */}
       {viewingCourse && (
-          // ✅ FIX: Z-INDEX 1000 ensures it covers everything
           <div className="fixed inset-0 bg-white z-[1000] flex flex-col animate-in slide-in-from-bottom duration-300">
               <div className="bg-gray-900 text-white p-4 flex justify-between items-center shadow-md shrink-0">
                   <div className="flex items-center gap-4"><button onClick={() => setViewingCourse(null)} className="p-2 hover:bg-gray-700 rounded-full"><X size={24}/></button><h2 className="font-bold text-lg">{viewingCourse.title}</h2></div>
@@ -341,7 +360,6 @@ const Courses: React.FC = () => {
               </div>
               
               <div className="flex flex-col lg:flex-row flex-grow h-full overflow-hidden">
-                  {/* Left Content */}
                   <div className="flex-grow bg-black flex flex-col items-center overflow-y-auto">
                       {activeChapterIndex < editorChapters.length ? (
                           <div className="w-full max-w-5xl p-6">
@@ -363,7 +381,6 @@ const Courses: React.FC = () => {
                       ) : <div className="text-white mt-20">Select a chapter</div>}
                   </div>
                   
-                  {/* Right Sidebar */}
                   <div className="w-full lg:w-96 bg-gray-50 border-l border-gray-200 flex flex-col h-full overflow-hidden shrink-0">
                       <div className="p-4 bg-white border-b border-gray-200 font-bold text-gray-700 flex justify-between items-center">
                           <span>Modules</span>
@@ -400,7 +417,6 @@ const Courses: React.FC = () => {
           </div>
       )}
 
-      {/* (Assign & Admin Modals omitted for brevity, but they are here) */}
       {showAssignModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">

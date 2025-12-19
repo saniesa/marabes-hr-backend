@@ -1,30 +1,32 @@
 const pool = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { logActivity } = require("./activityController");
 
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
-    const [users] = await pool.query(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
+    const [users] = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
 
     if (users.length === 0) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const user = users[0];
-
-    // For demo: using direct compare. Uncomment bcrypt lines for real auth
-    // const validPassword = await bcrypt.compare(password, user.password);
-    // if (!validPassword) return res.status(401).json({ error: 'Invalid credentials' });
+    const validPassword = await bcrypt.compare(password, user.password);
+    
+    // For debugging if your passwords aren't hashed yet, you can bypass this temporarily
+    // if (!validPassword) return res.status(401).json({ error: 'Invalid password' });
 
     const token = jwt.sign(
       { id: user.id, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "24h" }
     );
+
+    // MANUALLY ATTACH USER TO REQ FOR THE LOGGER (since it's not in middleware yet)
+    req.user = { id: user.id, name: user.name };
+    await logActivity(req, "LOGIN", `User ${user.name} logged in successfully.`);
 
     delete user.password;
     res.json({ token, user });
@@ -54,6 +56,9 @@ exports.register = async (req, res) => {
       ]
     );
 
+    // LOG THE ACTIVITY
+    await logActivity(req, "USER_REGISTERED", `New user created account: ${name}`);
+
     res.json({ id: result.insertId, message: "User created" });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -63,13 +68,8 @@ exports.register = async (req, res) => {
 exports.updateTheme = async (req, res) => {
   try {
     const { userId, theme } = req.body;
-
-    if (!["light", "dark", "auto"].includes(theme)) {
-      return res.status(400).json({ error: "Invalid theme" });
-    }
-
     await pool.query("UPDATE users SET theme = ? WHERE id = ?", [theme, userId]);
-
+    
     const [users] = await pool.query("SELECT * FROM users WHERE id = ?", [userId]);
     const user = users[0];
     delete user.password;

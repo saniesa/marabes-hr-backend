@@ -1,32 +1,43 @@
 const pool = require("../config/db");
 
-// Helper Function exported for other controllers
-exports.logActivity = async (req, action, details, userId = null, userName = "System") => {
+exports.logActivity = async (req, action, details) => {
   try {
-    const ipAddress =
-      req.headers["x-forwarded-for"] ||
-      req.socket.remoteAddress ||
-      "127.0.0.1";
+    const userId = req.user ? req.user.id : null;
+    let userName = "System";
+
+    if (userId) {
+      const [userRows] = await pool.query("SELECT name FROM users WHERE id = ?", [userId]);
+      if (userRows.length > 0) {
+        userName = userRows[0].name;
+      }
+    }
+
+    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.connection.remoteAddress || "::1";
 
     await pool.query(
-      `INSERT INTO activity_logs 
-       (userId, userName, action, details, ipAddress, timestamp)
-       VALUES (?, ?, ?, ?, ?, NOW())`,
+      "INSERT INTO activity_logs (userId, userName, action, details, ipAddress, timestamp) VALUES (?, ?, ?, ?, ?, NOW())",
       [userId, userName, action, details, ipAddress]
     );
 
-    console.log(`📝 Activity logged: ${action}`);
+    console.log(`[LOG]: ${userName} performed ${action}`);
   } catch (err) {
-    console.error("Failed to log activity:", err.message);
+    console.error("Error saving activity log:", err.message);
   }
 };
 
-exports.getLogs = async (req, res) => {
+exports.getAll = async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      "SELECT * FROM activity_logs ORDER BY timestamp DESC LIMIT 100"
-    );
+    const [rows] = await pool.query("SELECT * FROM activity_logs ORDER BY timestamp DESC");
     res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.deleteActivity = async (req, res) => {
+  try {
+    await pool.query("DELETE FROM activity_logs WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

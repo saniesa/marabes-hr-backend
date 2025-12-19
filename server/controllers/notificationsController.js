@@ -36,3 +36,21 @@ exports.markRead = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+//Delete function
+exports.deleteNotification = async (req, res) => {
+  try {
+    await pool.query("DELETE FROM notifications WHERE id = ?", [req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+exports.deleteAllByUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    await pool.query("DELETE FROM notifications WHERE userId = ?", [userId]);
+    res.json({ success: true, message: "All notifications cleared" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

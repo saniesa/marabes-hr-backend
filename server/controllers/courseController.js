@@ -2,6 +2,18 @@ const pool = require("../config/db");
 // We import logActivity from the other controller
 const { logActivity } = require("./activityController"); 
 
+// --- NEW: Internal Helper for Notifications ---
+const createNotification = async (userId, message, type = "info") => {
+  try {
+    await pool.query(
+      "INSERT INTO notifications (userId, message, type, isRead, createdAt) VALUES (?, ?, ?, 0, NOW())",
+      [userId, message, type]
+    );
+  } catch (err) {
+    console.error("Notification failed", err);
+  }
+};
+
 exports.getAll = async (req, res) => {
   try {
     const query = `
@@ -41,6 +53,21 @@ exports.create = async (req, res) => {
     );
     
     await logActivity(req, "COURSE_CREATED", `Created course: ${req.body.title}`);
+
+    // --- NEW: Notify all users that a new course is available ---
+    try {
+        const [users] = await pool.query("SELECT id FROM users");
+        for (const user of users) {
+            await createNotification(
+                user.id, 
+                `New Training Available: ${title}`, 
+                "info"
+            );
+        }
+    } catch (notifErr) {
+        console.error("Mass notification failed:", notifErr.message);
+    }
+
     res.json({ id: result.insertId, ...req.body, enrolledCount: 0 });
   } catch (err) {
     console.error("ADD COURSE ERROR:", err.message);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../App";
-import * as api from "../services/api";
-import { Employee } from "../types";
+import { useAuth } from "../../App";
+import * as api from "../../services/api";
+import { Employee } from "../../types";
 import {
   User,
   Mail,

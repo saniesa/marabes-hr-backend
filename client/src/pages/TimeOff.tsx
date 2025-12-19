@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../App";
 import * as api from "../services/api";
 import { TimeOffRequest } from "../types";
-import { Check, X, Download, Trash2 } from "lucide-react";
+import { Check, X, Download, Trash2, RotateCw } from "lucide-react"; // <-- Added RotateCw
 
 const TimeOff: React.FC = () => {
   const { user } = useAuth();
@@ -15,11 +15,27 @@ const TimeOff: React.FC = () => {
   });
   const [showForm, setShowForm] = useState(false);
   const [stats, setStats] = useState({ total: 0, daysTaken: 0 });
+  const [isRefreshing, setIsRefreshing] = useState(false); // <-- Added for animation
 
   useEffect(() => {
-    loadRequests();
-    if (user) loadStats();
+    loadAllData();
   }, [user]);
+
+  // Unified load function for the refresh button
+  const loadAllData = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        loadRequests(),
+        user ? loadStats() : Promise.resolve()
+      ]);
+    } catch (err) {
+      console.error("Refresh failed", err);
+    } finally {
+      // Small delay for smooth animation
+      setTimeout(() => setIsRefreshing(false), 500);
+    }
+  };
 
   const loadRequests = async () => {
     const all = await api.getTimeOffRequests();
@@ -32,8 +48,14 @@ const TimeOff: React.FC = () => {
 
   const loadStats = async () => {
     if (!user) return;
+    // Using axios/api instance is usually better, but keeping your fetch logic:
     const response = await fetch(
-      `http://localhost:5000/timeoff/stats/${user.id}`
+      `http://localhost:5000/api/timeoff/stats/${user.id}`, // Added /api to match your backend
+      {
+          headers: {
+              'Authorization': `Bearer ${localStorage.getItem('marabes_token')}`
+          }
+      }
     );
     const data = await response.json();
     setStats(data);
@@ -52,8 +74,7 @@ const TimeOff: React.FC = () => {
     });
     setShowForm(false);
     setNewRequest({ type: "Vacation", startDate: "", endDate: "", reason: "" });
-    loadRequests();
-    loadStats();
+    loadAllData();
   };
 
   const handleStatus = async (id: string, status: "APPROVED" | "REJECTED") => {
@@ -62,13 +83,13 @@ const TimeOff: React.FC = () => {
       status,
       status === "APPROVED" ? "Approved" : "Not approved"
     );
-    loadRequests();
+    loadAllData();
   };
   
 const handleDelete = async (id: string) => {
   if (!window.confirm("Delete this request?")) return;
-  await api.deleteTimeOffRequest(id); // ✅ uses the new api function
-  loadRequests();
+  await api.deleteTimeOffRequest(id);
+  loadAllData();
 };
 
   const handleExport = () => {
@@ -93,7 +114,17 @@ const handleDelete = async (id: string) => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">Time Off</h1>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2"> {/* Added flex container */}
+          
+          {/* REFRESH BUTTON */}
+          <button 
+            onClick={loadAllData}
+            className={`p-2 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-mint-600 hover:bg-mint-50 transition-all ${isRefreshing ? 'opacity-50' : ''}`}
+            title="Refresh requests"
+          >
+            <RotateCw size={18} className={isRefreshing ? "animate-spin" : ""} />
+          </button>
+
           {user?.role === "ADMIN" && (
             <button
               onClick={handleExport}

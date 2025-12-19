@@ -7,7 +7,6 @@ export interface User {
   role: Role;
   avatarUrl: string;
 }
-
 export interface Employee extends User {
   jobPosition: string;
   birthday: string;
@@ -64,7 +63,9 @@ export interface AttendanceRecord {
   id: string;
   userId: string;
   date: string; // YYYY-MM-DD
-  clockInTime: string; // ISO string
-  clockOutTime?: string; // ISO string
-  status: "CLOCKED_IN" | "CLOCKED_OUT";
+  clockInTime: string; // Morning Start
+  breakStartTime?: string; // When break started
+  breakEndTime?: string;   // When break ended
+  clockOutTime?: string;   // Final Shift end
+  status: "CLOCKED_IN" | "ON_BREAK" | "BACK_FROM_BREAK" | "CLOCKED_OUT";
 }

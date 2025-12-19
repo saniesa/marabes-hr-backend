@@ -30,7 +30,18 @@ exports.selfEnroll = async (req, res) => {
     await pool.query("INSERT INTO enrollments (userId, courseId, dateEnrolled, status) VALUES (?, ?, CURDATE(), 'PENDING')", [userId, courseId]);
     
     const [courses] = await pool.query("SELECT title FROM courses WHERE id=?", [courseId]);
-    if (courses.length > 0) createNotification(userId, `Request sent for ${courses[0].title}`, "info");
+    const [user] = await pool.query("SELECT name FROM users WHERE id=?", [userId]);
+    
+    if (courses.length > 0) {
+        // Notify User
+        createNotification(userId, `Request sent for ${courses[0].title}`, "info");
+        
+        // --- NEW: Notify Admins about the enrollment request ---
+        const [admins] = await pool.query("SELECT id FROM users WHERE role = 'ADMIN'");
+        for (const admin of admins) {
+          await createNotification(admin.id, `Enrollment request: ${user[0].name} for ${courses[0].title}`, "info");
+        }
+    }
 
     res.json({ success: true, status: 'PENDING' });
   } catch (err) {
@@ -93,12 +104,18 @@ exports.updateStatus = async (req, res) => {
   try {
     await pool.query("UPDATE enrollments SET status = ? WHERE id = ?", [status, req.params.id]);
     
-    if (status === 'APPROVED') {
-        const [enr] = await pool.query("SELECT courseId, userId FROM enrollments WHERE id=?", [req.params.id]);
-        if(enr.length > 0) {
+    const [enr] = await pool.query("SELECT courseId, userId FROM enrollments WHERE id=?", [req.params.id]);
+    
+    if (enr.length > 0) {
+        const [c] = await pool.query("SELECT title FROM courses WHERE id=?", [enr[0].courseId]);
+        
+        if (status === 'APPROVED') {
             await pool.query("UPDATE courses SET enrolledCount = enrolledCount + 1 WHERE id=?", [enr[0].courseId]);
-            const [c] = await pool.query("SELECT title FROM courses WHERE id=?", [enr[0].courseId]);
             createNotification(enr[0].userId, `Approved for ${c[0].title}`, "success");
+        } 
+        // --- NEW: Notify if Rejected ---
+        else if (status === 'REJECTED') {
+            createNotification(enr[0].userId, `Enrollment request for ${c[0].title} was declined.`, "error");
         }
     }
     res.json({ success: true });

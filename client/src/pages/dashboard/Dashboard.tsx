@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useAuth } from "../App";
-import * as api from "../services/api";
-import { AttendanceRecord } from "../types";
-import { Users, Calendar, Award, Fingerprint, Clock } from "lucide-react";
+import { useAuth } from "../../App";
+import * as api from "../../services/api";
+import { AttendanceRecord } from "../../types";
+import { Users, Calendar, Award, Fingerprint, Clock, AlertCircle } from "lucide-react";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -12,9 +12,7 @@ const Dashboard: React.FC = () => {
     avgScore: 0,
   });
   const [attendance, setAttendance] = useState<AttendanceRecord | null>(null);
-  const [attendanceHistory, setAttendanceHistory] = useState<
-    AttendanceRecord[]
-  >([]);
+  const [attendanceHistory, setAttendanceHistory] = useState<AttendanceRecord[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -55,17 +53,25 @@ const Dashboard: React.FC = () => {
     setIsScanning(true);
 
     setTimeout(async () => {
-      if (attendance && attendance.status === "CLOCKED_IN") {
-        await api.clockOut(user.id);
-      } else {
+      /**
+       * LOGIC FOR 4 STEPS:
+       * 1. No Record -> Clock In (Morning Start)
+       * 2. Status CLOCKED_IN -> Clock Out (Start Break)
+       * 3. Status ON_BREAK -> Clock In (End Break / Return)
+       * 4. Status BACK_FROM_BREAK -> Clock Out (Final Finish)
+       */
+      const currentStatus = attendance?.status;
+
+      if (!attendance || currentStatus === "ON_BREAK") {
         await api.clockIn(user.id);
+      } else if (currentStatus === "CLOCKED_IN" || currentStatus === "BACK_FROM_BREAK") {
+        await api.clockOut(user.id);
       }
+
       const updated = await api.getTodayAttendance(user.id);
       setAttendance(updated);
-
       const history = await api.getAttendanceHistory(user.id);
       setAttendanceHistory(history.slice(0, 7));
-
       setIsScanning(false);
     }, 1500);
   };
@@ -89,11 +95,40 @@ const Dashboard: React.FC = () => {
   };
 
   const calculateHours = (record: AttendanceRecord) => {
-    if (!record.clockInTime || !record.clockOutTime) return "--";
-    const start = new Date(record.clockInTime);
-    const end = new Date(record.clockOutTime);
-    const hours = Math.abs(end.getTime() - start.getTime()) / 36e5;
+    if (!record.clockInTime) return "--";
+    const start = new Date(record.clockInTime).getTime();
+    const end = record.clockOutTime ? new Date(record.clockOutTime).getTime() : new Date().getTime();
+    let totalMs = end - start;
+
+    if (record.breakStartTime && record.breakEndTime) {
+      const bStart = new Date(record.breakStartTime).getTime();
+      const bEnd = new Date(record.breakEndTime).getTime();
+      totalMs = totalMs - (bEnd - bStart);
+    }
+
+    const hours = Math.max(0, totalMs / 36e5);
     return hours.toFixed(1);
+  };
+
+  // Helper to detect if a break was longer than 60 minutes
+  const getBreakLateStatus = (record: AttendanceRecord) => {
+    if (!record.breakStartTime || !record.breakEndTime) return null;
+    const start = new Date(record.breakStartTime).getTime();
+    const end = new Date(record.breakEndTime).getTime();
+    const minutes = Math.floor((end - start) / 60000);
+    return minutes > 60 ? { isLate: true, mins: minutes } : { isLate: false, mins: minutes };
+  };
+
+  const getStatusText = () => {
+    if (isScanning) return "Scanning...";
+    if (!attendance) return "Tap to Clock In";
+    switch (attendance.status) {
+      case "CLOCKED_IN": return "Tap to Start Break";
+      case "ON_BREAK": return "Tap to End Break";
+      case "BACK_FROM_BREAK": return "Tap to Clock Out";
+      case "CLOCKED_OUT": return "Shift Completed";
+      default: return "Tap to Clock In";
+    }
   };
 
   return (
@@ -125,7 +160,7 @@ const Dashboard: React.FC = () => {
                ${
                  isScanning
                    ? "border-mint-400 scale-95"
-                   : attendance?.status === "CLOCKED_IN"
+                   : (attendance?.status && attendance.status !== "CLOCKED_OUT")
                    ? "border-mint-500 bg-mint-50"
                    : attendance?.status === "CLOCKED_OUT"
                    ? "border-gray-300 bg-gray-50 opacity-50 cursor-not-allowed"
@@ -139,7 +174,7 @@ const Dashboard: React.FC = () => {
             <Fingerprint
               size={64}
               className={`transition-colors duration-500 ${
-                attendance?.status === "CLOCKED_IN"
+                (attendance?.status && attendance.status !== "CLOCKED_OUT")
                   ? "text-mint-600"
                   : "text-gray-400 group-hover:text-mint-500"
               }`}
@@ -154,35 +189,27 @@ const Dashboard: React.FC = () => {
                 second: "2-digit",
               })}
             </div>
-            <p
-              className={`text-sm font-medium ${
-                attendance?.status === "CLOCKED_IN"
-                  ? "text-mint-600"
-                  : "text-gray-500"
-              }`}
-            >
-              {isScanning
-                ? "Scanning..."
-                : attendance?.status === "CLOCKED_IN"
-                ? "Currently Clocked In"
-                : attendance?.status === "CLOCKED_OUT"
-                ? "Shift Completed"
-                : "Tap to Clock In"}
+            <p className={`text-sm font-medium ${attendance?.status === "CLOCKED_OUT" ? "text-gray-400" : "text-mint-600"}`}>
+              {getStatusText()}
             </p>
           </div>
 
-          <div className="mt-6 w-full grid grid-cols-2 gap-4 text-center text-sm border-t pt-4">
+          <div className="mt-6 w-full grid grid-cols-2 gap-y-4 gap-x-2 text-center text-sm border-t pt-4">
             <div>
-              <p className="text-gray-400 text-xs">Clock In</p>
-              <p className="font-semibold text-gray-700">
-                {formatTime(attendance?.clockInTime)}
-              </p>
+              <p className="text-gray-400 text-[10px] uppercase font-bold">Clock In</p>
+              <p className="font-semibold text-gray-700">{formatTime(attendance?.clockInTime)}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-xs">Clock Out</p>
-              <p className="font-semibold text-gray-700">
-                {formatTime(attendance?.clockOutTime)}
-              </p>
+              <p className="text-gray-400 text-[10px] uppercase font-bold">Break Start</p>
+              <p className="font-semibold text-gray-700">{formatTime(attendance?.breakStartTime)}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-[10px] uppercase font-bold">Break End</p>
+              <p className="font-semibold text-gray-700">{formatTime(attendance?.breakEndTime)}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 text-[10px] uppercase font-bold">Clock Out</p>
+              <p className="font-semibold text-gray-700">{formatTime(attendance?.clockOutTime)}</p>
             </div>
           </div>
         </div>
@@ -230,7 +257,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Attendance History */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Clock className="text-mint-600" size={20} />
@@ -243,42 +269,40 @@ const Dashboard: React.FC = () => {
                 <th className="p-3 text-left">Date</th>
                 <th className="p-3 text-left">Clock In</th>
                 <th className="p-3 text-left">Clock Out</th>
-                <th className="p-3 text-left">Hours</th>
+                <th className="p-3 text-left">Hours (Net)</th>
                 <th className="p-3 text-left">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {attendanceHistory.map((record) => (
-                <tr key={record.id} className="hover:bg-gray-50">
-                  <td className="p-3">
-                    {new Date(record.date).toLocaleDateString()}
-                  </td>
-                  <td className="p-3">{formatTime(record.clockInTime)}</td>
-                  <td className="p-3">{formatTime(record.clockOutTime)}</td>
-                  <td className="p-3 font-semibold">
-                    {calculateHours(record)}h
-                  </td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        record.status === "CLOCKED_OUT"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {record.status === "CLOCKED_OUT"
-                        ? "Complete"
-                        : "In Progress"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+              {attendanceHistory.map((record) => {
+                const breakStatus = getBreakLateStatus(record);
+                return (
+                  <tr key={record.id} className="hover:bg-gray-50">
+                    <td className="p-3">{new Date(record.date).toLocaleDateString()}</td>
+                    <td className="p-3">{formatTime(record.clockInTime)}</td>
+                    <td className="p-3">
+                      {formatTime(record.clockOutTime)}
+                      {breakStatus?.isLate && (
+                        <div className="text-[10px] text-red-500 font-bold flex items-center gap-1 mt-1">
+                          <AlertCircle size={10}/> Late Break ({breakStatus.mins}m)
+                        </div>
+                      )}
+                    </td>
+                    <td className="p-3 font-semibold">{calculateHours(record)}h</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          record.status === "CLOCKED_OUT" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {record.status === "CLOCKED_OUT" ? "Complete" : record.status === "ON_BREAK" ? "On Break" : "In Progress"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {attendanceHistory.length === 0 && (
-            <div className="text-center py-8 text-gray-400">
-              No attendance history yet
-            </div>
+            <div className="text-center py-8 text-gray-400">No attendance history yet</div>
           )}
         </div>
       </div>

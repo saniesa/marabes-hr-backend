@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useAuth } from "../App";
+import { useAuth } from "../../App";
 import {
   Shield,
   Bell,
@@ -9,7 +9,7 @@ import {
   Lock,
   Save,
 } from "lucide-react";
-import * as api from "../services/api";
+import * as api from "../../services/api";
 
 const Settings: React.FC = () => {
   const { user, login } = useAuth();

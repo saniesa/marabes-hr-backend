@@ -2,18 +2,19 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { Employee } from "./types";
 import * as api from "./services/api";
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
-import Employees from "./pages/Employees";
+import Login from "./pages/auth/Login";
+import Dashboard from "./pages/dashboard/Dashboard";
+import Employees from "./pages/employees/Employees";
 import TimeOff from "./pages/TimeOff";
 import Evaluations from "./pages/Evaluations";
 import Courses from "./pages/Courses";
 import Layout from "./components/Layout";
-import Profile from "./pages/Profile";
+import Profile from "./pages/employees/Profile";
 import Reports from "./pages/Reports";
-import Settings from "./pages/Settings";
-import ActivityLog from "./pages/ActivityLog";
-import { ThemeProvider } from "./pages/context/ThemeContext"; // ✅ Wrap app with ThemeProvider
+import Settings from "./pages/settings/Settings";
+import ActivityLog from "./pages/activities/ActivityLog";
+// import { ThemeProvider } from "./context/ThemeContext"; // ✅ Wrap app with ThemeProvider
+import { Toaster } from 'react-hot-toast'; 
 
 interface AuthContextType {
   user: Employee | null;
@@ -38,11 +39,14 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
+ const login = async (email: string, password: string) => {
     try {
       const response = await api.login(email, password);
+      
       setUser(response.user);
       localStorage.setItem("marabes_user", JSON.stringify(response.user));
+      localStorage.setItem("marabes_token", response.token); // Store the JWT here!
+      
       return true;
     } catch (error) {
       console.error("Login failed:", error);
@@ -53,6 +57,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("marabes_user");
+    localStorage.removeItem("marabes_token"); // Clear token on logout
     api.logout();
   };
 
@@ -79,8 +84,9 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
 const App = () => {
   return (
-    <ThemeProvider>
+    // <ThemeProvider>
       <AuthProvider>
+        <Toaster position="top-right" reverseOrder={false} />
         <HashRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -105,7 +111,7 @@ const App = () => {
           </Routes>
         </HashRouter>
       </AuthProvider>
-    </ThemeProvider>
+    // </ThemeProvider>
   );
 };
 
