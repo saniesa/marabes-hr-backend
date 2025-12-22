@@ -13,8 +13,9 @@ import Profile from "./pages/employees/Profile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/settings/Settings";
 import ActivityLog from "./pages/activities/ActivityLog";
-// import { ThemeProvider } from "./context/ThemeContext"; // ✅ Wrap app with ThemeProvider
+import { ThemeProvider } from "./context/ThemeContext"; 
 import { Toaster } from 'react-hot-toast'; 
+import Payroll from './pages/Payroll';
 
 interface AuthContextType {
   user: Employee | null;
@@ -84,7 +85,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 
 const App = () => {
   return (
-    // <ThemeProvider>
+     <ThemeProvider>
       <AuthProvider>
         <Toaster position="top-right" reverseOrder={false} />
         <HashRouter>
@@ -105,13 +106,14 @@ const App = () => {
               <Route path="timeoff" element={<TimeOff />} />               <Route path="evaluations" element={<Evaluations />} />
               <Route path="courses" element={<Courses />} />
               <Route path="reports" element={<Reports />} />
+              <Route path="payroll" element={<Payroll />} />
               <Route path="settings" element={<Settings />} />
               <Route path="activity" element={<ActivityLog />} />
             </Route>
           </Routes>
         </HashRouter>
       </AuthProvider>
-    // </ThemeProvider>
+    </ThemeProvider>
   );
 };
 

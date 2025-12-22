@@ -59,6 +59,7 @@ app.use("/api/enrollments", enrollmentRoutes);
 app.use("/api/courses", courseRoutes);         
 app.use("/api/attendance", attendanceRoutes); 
 app.use("/api/activity", activityRoute);
+app.use("/api/payroll", require("./routes/payroll"));
 
 // PROTECTED UPLOAD ROUTE
 app.post("/api/upload", upload.single("file"), (req, res) => {

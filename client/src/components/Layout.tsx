@@ -1,5 +1,5 @@
 import React from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../App";
 import {
   LayoutDashboard,
@@ -13,14 +13,16 @@ import {
   Settings as SettingsIcon,
   BarChart3,
   Activity,
+  Banknote, 
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
+// import { PageTransition } from "./PageTransition";
 
 const Layout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
-
+  const location = useLocation();
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -33,6 +35,7 @@ const Layout = () => {
     { name: "Evaluations", path: "/evaluations", icon: <ClipboardCheck size={20} />, allowed: ["ADMIN", "EMPLOYEE"] },
     { name: "Training", path: "courses", icon: <GraduationCap size={20} />, allowed: ["ADMIN", "EMPLOYEE"] },
     { name: "Reports", path: "/reports", icon: <BarChart3 size={20} />, allowed: ["ADMIN"] },
+    { name: "Payroll", path: "/payroll", icon: <Banknote size={20} />, allowed: ["ADMIN", "EMPLOYEE"] }, // <-- ADD THIS
     { name: "Activity", path: "/activity", icon: <Activity size={20} />, allowed: ["ADMIN"] },
     { name: "Settings", path: "/settings", icon: <SettingsIcon size={20} />, allowed: ["ADMIN", "EMPLOYEE"] },
   ];
@@ -122,7 +125,9 @@ const Layout = () => {
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth">
-          <Outlet />
+            <main className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth">
+            <Outlet />
+           </main>
         </main>
       </div>
     </div>

@@ -14,8 +14,23 @@ export interface Employee extends User {
   phone: string;
   address: string;
   department: string;
+  baseSalary?: number; 
 }
-
+export interface PayrollRecord {
+  id: string;
+  userId: string;
+  name: string; // from Join
+  department: string; // from Join
+  month: string;
+  year: number;
+  baseSalary: number;
+  totalHours: number;
+  bonuses: number;
+  deductions: number;
+  netSalary: number;
+  status: "PENDING" | "PAID";
+  createdAt: string;
+}
 export interface TimeOffRequest {
   id: string;
   userId: string;

@@ -82,6 +82,16 @@ export const updateUser = async (user: Employee) => {
 export const deleteUser = async (id: string) => {
   await axios.delete(`${API_BASE}/users/${id}`);
 };
+// ===== PAYROLL =====
+export const getPayrollHistory = async (): Promise<any[]> => {
+  const res = await axios.get(`${API_BASE}/payroll/history`);
+  return res.data;
+};
+
+export const generatePayroll = async (month: string, year: number) => {
+  const res = await axios.post(`${API_BASE}/payroll/generate`, { month, year });
+  return res.data;
+};
 
 // ===== TIME OFF =====
 export const getTimeOffRequests = async (): Promise<TimeOffRequest[]> => {
@@ -179,6 +189,7 @@ export const updateCourseContent = async (id: string, content: any[]) => {
   const res = await axios.put(`${API_BASE}/courses/${id}/content`, { content });
   return res.data;
 };
+
 
 // ===== ENROLLMENTS =====
 export const getEnrollments = async (userId: string) => {
