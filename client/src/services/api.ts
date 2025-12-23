@@ -42,7 +42,6 @@ export const login = async (email: string, password: string) => {
   return res.data;
 };
 
-
 // Existing functions: login, logout, etc.
 
 export const updateTheme = async (userId: number, theme: string) => {
@@ -83,8 +82,21 @@ export const deleteUser = async (id: string) => {
   await axios.delete(`${API_BASE}/users/${id}`);
 };
 // ===== PAYROLL =====
+// 1. Get the list of payroll records
 export const getPayrollHistory = async (): Promise<any[]> => {
   const res = await axios.get(`${API_BASE}/payroll/history`);
+  return res.data;
+};
+
+// 2. Trigger the calculation (Month End Process)
+export const runPayroll = async (month: string, year: number) => {
+  const res = await axios.post(`${API_BASE}/payroll/generate`, { month, year });
+  return res.data;
+};
+
+// 3. Update a single record (Modify Bonuses/Deductions)
+export const updatePayroll = async (id: string | number, data: any) => {
+  const res = await axios.put(`${API_BASE}/payroll/update/${id}`, data);
   return res.data;
 };
 
@@ -223,6 +235,11 @@ export const getAttendanceHistory = async (userId: string) => {
   return res.data;
 };
 
+// Add this to your api.ts
+export const updateBaseSalary = async (id: number, baseSalary: number) => {
+  const res = await axios.put(`${API_BASE}/users/${id}/salary`, { baseSalary });
+  return res.data;
+};
 // Add to client/services/api.ts
 
 export const uploadFile = async (file: File) => {

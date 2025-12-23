@@ -1,18 +1,19 @@
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
-// 1. Import your middleware
 const { authMiddleware, adminOnly } = require("../middleware/auth"); 
 
-// 2. PROTECT EVERYTHING: Every route below this line now requires a login
+// Protect everything
 router.use(authMiddleware);
 
-// Now define the routes
-router.get("/", userController.getAll); // Logged in users can see the list
+router.get("/", userController.getAll); 
 
-// 3. ADMIN ONLY: Only Admins can create, update, or delete
+// Use adminOnly here to match your import at the top
 router.post("/", adminOnly, userController.create); 
 router.put("/:id", adminOnly, userController.update);
 router.delete("/:id", adminOnly, userController.deleteUser);
+
+// FIXED LINE: Changed verifyToken -> authMiddleware and isAdmin -> adminOnly
+router.put("/:id/salary", adminOnly, userController.updateBaseSalary);
 
 module.exports = router;

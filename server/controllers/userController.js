@@ -78,3 +78,12 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.updateBaseSalary = async (req, res) => {
+  const { id } = req.params;
+  const { baseSalary } = req.body;
+  try {
+    await pool.query("UPDATE users SET baseSalary = ? WHERE id = ?", [baseSalary, id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+};
