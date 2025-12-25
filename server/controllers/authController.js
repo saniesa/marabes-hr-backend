@@ -79,3 +79,30 @@ exports.updateTheme = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+exports.changePassword = async (req, res) => {
+  try {
+    const { userId, oldPassword, newPassword } = req.body;
+    
+    // 1. Get user
+    const [users] = await pool.query("SELECT * FROM users WHERE id = ?", [userId]);
+    if (users.length === 0) return res.status(404).json({ error: "User not found" });
+
+    const user = users[0];
+
+    // 2. Check old password
+    const validPassword = await bcrypt.compare(oldPassword, user.password);
+    if (!validPassword) return res.status(401).json({ error: "Incorrect current password" });
+
+    // 3. Hash new password and update
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await pool.query("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, userId]);
+
+    // 4. Log the activity
+    req.user = { id: user.id, name: user.name };
+    await logActivity(req, "PASSWORD_CHANGED", "User successfully updated their security credentials.");
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

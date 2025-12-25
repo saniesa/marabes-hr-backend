@@ -14,9 +14,11 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/settings/Settings";
 import ActivityLog from "./pages/activities/ActivityLog";
 import { ThemeProvider } from "./context/ThemeContext"; 
+import { LanguageProvider } from "./context/LanguageContext"; // 1. Import Provider
 import { Toaster } from 'react-hot-toast'; 
 import Payroll from './pages/Payroll';
 
+// ... (AuthContext and AuthProvider remain exactly as they were) ...
 interface AuthContextType {
   user: Employee | null;
   login: (email: string, pass: string) => Promise<boolean>;
@@ -43,11 +45,9 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
  const login = async (email: string, password: string) => {
     try {
       const response = await api.login(email, password);
-      
       setUser(response.user);
       localStorage.setItem("marabes_user", JSON.stringify(response.user));
-      localStorage.setItem("marabes_token", response.token); // Store the JWT here!
-      
+      localStorage.setItem("marabes_token", response.token);
       return true;
     } catch (error) {
       console.error("Login failed:", error);
@@ -58,7 +58,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("marabes_user");
-    localStorage.removeItem("marabes_token"); // Clear token on logout
+    localStorage.removeItem("marabes_token");
     api.logout();
   };
 
@@ -72,47 +72,37 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
-
-  if (isLoading)
-    return (
-      <div className="flex h-screen items-center justify-center text-mint-600">
-        Loading...
-      </div>
-    );
+  if (isLoading) return <div className="flex h-screen items-center justify-center text-mint-600">Loading...</div>;
   if (!user) return <Navigate to="/login" state={{ from: location }} replace />;
   return <>{children}</>;
 };
 
 const App = () => {
   return (
-     <ThemeProvider>
-      <AuthProvider>
-        <Toaster position="top-right" reverseOrder={false} />
-        <HashRouter>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="employees" element={<Employees />} />
-              <Route path="timeoff" element={<TimeOff />} />               <Route path="evaluations" element={<Evaluations />} />
-              <Route path="courses" element={<Courses />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="payroll" element={<Payroll />} />
-              <Route path="settings" element={<Settings />} />
-              <Route path="activity" element={<ActivityLog />} />
-            </Route>
-          </Routes>
-        </HashRouter>
-      </AuthProvider>
+    <ThemeProvider>
+      <LanguageProvider> {/* 2. Wrap here */}
+        <AuthProvider>
+          <Toaster position="top-right" reverseOrder={false} />
+          <HashRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="employees" element={<Employees />} />
+                <Route path="timeoff" element={<TimeOff />} />
+                <Route path="evaluations" element={<Evaluations />} />
+                <Route path="courses" element={<Courses />} />
+                <Route path="reports" element={<Reports />} />
+                <Route path="payroll" element={<Payroll />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="activity" element={<ActivityLog />} />
+              </Route>
+            </Routes>
+          </HashRouter>
+        </AuthProvider>
+      </LanguageProvider>
     </ThemeProvider>
   );
 };

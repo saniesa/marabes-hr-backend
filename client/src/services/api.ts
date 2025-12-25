@@ -251,3 +251,18 @@ export const uploadFile = async (file: File) => {
   });
   return res.data.url; // Returns "http://localhost:5000/uploads/video-123.mp4"
 };
+
+export const getSettings = async () => {
+  const res = await axios.get(`${API_BASE}/settings`);
+  return res.data;
+};
+
+export const updateSettings = async (settings: any) => {
+  const res = await axios.post(`${API_BASE}/settings`, settings);
+  return res.data;
+};
+
+export const changePassword = async (data: any) => {
+  const res = await axios.post(`${API_BASE.replace("/api","")}/auth/change-password`, data);
+  return res.data;
+};

@@ -17,6 +17,7 @@ const categoryRoutes = require("./routes/category");
 const enrollmentRoutes = require("./routes/enrollment");
 const courseRoutes = require("./routes/course");
 const attendanceRoutes = require("./routes/attendance");
+const settingsRoutes = require("./routes/settings");
 
 const app = express();
 
@@ -60,6 +61,8 @@ app.use("/api/courses", courseRoutes);
 app.use("/api/attendance", attendanceRoutes); 
 app.use("/api/activity", activityRoute);
 app.use("/api/payroll", require("./routes/payroll"));
+app.use("/api/settings", settingsRoutes); 
+
 
 // PROTECTED UPLOAD ROUTE
 app.post("/api/upload", upload.single("file"), (req, res) => {

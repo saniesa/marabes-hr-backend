@@ -16,13 +16,13 @@ import {
   Banknote, 
 } from "lucide-react";
 import NotificationBell from "./NotificationBell";
-// import { PageTransition } from "./PageTransition";
 
 const Layout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const location = useLocation();
+  
   const handleLogout = () => {
     logout();
     navigate("/login");
@@ -35,7 +35,7 @@ const Layout = () => {
     { name: "Evaluations", path: "/evaluations", icon: <ClipboardCheck size={20} />, allowed: ["ADMIN", "EMPLOYEE"] },
     { name: "Training", path: "courses", icon: <GraduationCap size={20} />, allowed: ["ADMIN", "EMPLOYEE"] },
     { name: "Reports", path: "/reports", icon: <BarChart3 size={20} />, allowed: ["ADMIN"] },
-    { name: "Payroll", path: "/payroll", icon: <Banknote size={20} />, allowed: ["ADMIN", "EMPLOYEE"] }, // <-- ADD THIS
+    { name: "Payroll", path: "/payroll", icon: <Banknote size={20} />, allowed: ["ADMIN", "EMPLOYEE"] }, 
     { name: "Activity", path: "/activity", icon: <Activity size={20} />, allowed: ["ADMIN"] },
     { name: "Settings", path: "/settings", icon: <SettingsIcon size={20} />, allowed: ["ADMIN", "EMPLOYEE"] },
   ];
@@ -80,21 +80,34 @@ const Layout = () => {
               ))}
           </nav>
 
+          {/* USER SECTION UPDATED: NOW CLICKABLE */}
           <div className="p-4 border-t border-gray-100">
-            <div className="flex items-center gap-3 mb-4 px-4">
+            <NavLink
+              to="/profile"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-3 mb-4 p-2 rounded-xl transition-all group ${
+                  isActive ? "bg-mint-50 ring-1 ring-mint-200" : "hover:bg-gray-50"
+                }`
+              }
+            >
               <img
                 src={
                   user?.avatarUrl ||
                   `https://ui-avatars.com/api/?name=${user.name}&background=0D9488&color=fff`
                 }
                 alt="Avatar"
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-mint-200"
+                className="w-10 h-10 rounded-full object-cover ring-2 ring-mint-200 group-hover:ring-mint-400 transition-all"
               />
               <div className="overflow-hidden">
-                <p className="text-sm font-semibold text-gray-800 truncate">{user?.name}</p>
-                <p className="text-xs text-gray-500 truncate">{user?.role}</p>
+                <p className="text-sm font-bold text-gray-800 truncate group-hover:text-mint-600 transition-colors">
+                  {user?.name}
+                </p>
+                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest truncate">
+                   {user?.role}
+                </p>
               </div>
-            </div>
+            </NavLink>
 
             <button
               onClick={handleLogout}
@@ -125,9 +138,7 @@ const Layout = () => {
 
         {/* Page Content */}
         <main className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth">
-            <main className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth">
             <Outlet />
-           </main>
         </main>
       </div>
     </div>

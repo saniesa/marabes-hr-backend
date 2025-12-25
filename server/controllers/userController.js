@@ -28,7 +28,6 @@ exports.create = async (req, res) => {
       ]
     );
 
-    // LOG THE ACTIVITY
     await logActivity(req, "USER_CREATED", `Added new employee: ${name} (${role})`);
 
     res.json({ id: result.insertId, ...req.body, password: undefined });
@@ -53,7 +52,6 @@ exports.update = async (req, res) => {
       ]
     );
 
-    // LOG THE ACTIVITY
     await logActivity(req, "USER_UPDATED", `Updated profile details for employee: ${name}`);
 
     res.json({ id: req.params.id, ...req.body });
@@ -64,13 +62,11 @@ exports.update = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    // Get name before deleting for the log
     const [users] = await pool.query("SELECT name FROM users WHERE id=?", [req.params.id]);
     const userName = users[0]?.name || "Unknown";
 
     await pool.query("DELETE FROM users WHERE id=?", [req.params.id]);
 
-    // LOG THE ACTIVITY
     await logActivity(req, "USER_DELETED", `Removed employee account: ${userName}`);
 
     res.json({ success: true });
@@ -83,7 +79,15 @@ exports.updateBaseSalary = async (req, res) => {
   const { id } = req.params;
   const { baseSalary } = req.body;
   try {
+    // Fetch name for the log
+    const [user] = await pool.query("SELECT name FROM users WHERE id = ?", [id]);
+    const name = user[0] ? user[0].name : "Unknown";
+
     await pool.query("UPDATE users SET baseSalary = ? WHERE id = ?", [baseSalary, id]);
+
+    // LOG THE AUDIT
+    await logActivity(req, "SALARY_UPDATE", `Changed base salary for ${name} to $${baseSalary}`);
+
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
