@@ -91,3 +91,32 @@ exports.updateBaseSalary = async (req, res) => {
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 };
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, phone, address, avatarUrl, birthday } = req.body;
+    
+    await pool.query(
+      "UPDATE users SET name=?, phone=?, address=?, avatarUrl=?, birthday=? WHERE id=?",
+      [name, phone, address, avatarUrl, birthday, req.params.id]
+    );
+
+    const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [req.params.id]);
+    
+    res.json(rows[0]); 
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.getMe = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM users WHERE id = ?", [req.user.id]);
+    const user = rows[0];
+    if (!user) return res.status(404).json({ error: "User not found" });
+    delete user.password;
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

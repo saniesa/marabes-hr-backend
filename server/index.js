@@ -4,7 +4,8 @@ const cors = require("cors");
 const path = require("path");
 const multer = require("multer");
 const fs = require("fs");
-
+const http = require("http");
+const { Server } = require("socket.io");
 // 1. IMPORT YOUR ROUTES & MIDDLEWARE
 const { authMiddleware } = require("./middleware/auth"); // <--- Import your security guard
 const authRoutes = require("./routes/auth");
@@ -20,12 +21,11 @@ const attendanceRoutes = require("./routes/attendance");
 const settingsRoutes = require("./routes/settings");
 
 const app = express();
+const server = http.createServer(app); // Create HTTP server
 
-// 2. BASIC MIDDLEWARE
 app.use(cors());
 app.use(express.json());
 
-// 3. STORAGE CONFIG (Multer)
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const dir = "./uploads";
@@ -38,19 +38,22 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// ==========================================
-// 4. ROUTE HIERARCHY (The Security Part)
-// ==========================================
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000", // Update with your frontend URL
+    methods: ["GET", "POST"]
+  }
+});
 
-// AUTH (Public - No login needed to reach these)
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 app.use("/auth", authRoutes); 
 
-// --- THE SECURITY GATEKEEPER ---
-// Everything below this line starting with "/api" will now REQUIRE a login token
+
 app.use("/api", authMiddleware); 
 
-// PROTECTED API ROUTES
-// (The blurry colors will go away because we are using the variables here)
 app.use("/api/users", userRoutes);
 app.use("/api/scores", scoreRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -64,14 +67,12 @@ app.use("/api/payroll", require("./routes/payroll"));
 app.use("/api/settings", settingsRoutes); 
 
 
-// PROTECTED UPLOAD ROUTE
 app.post("/api/upload", upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
   const fileUrl = `http://localhost:${PORT}/uploads/${req.file.filename}`;
   res.json({ url: fileUrl });
 });
 
-// 5. STATIC FILES & TEST ROUTES
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/", (req, res) => res.send("Marabes HR Backend is secured and working!"));
 

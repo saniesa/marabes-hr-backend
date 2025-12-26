@@ -240,8 +240,8 @@ export const updateBaseSalary = async (id: number, baseSalary: number) => {
   const res = await axios.put(`${API_BASE}/users/${id}/salary`, { baseSalary });
   return res.data;
 };
-// Add to client/services/api.ts
 
+// Add to client/services/api.ts
 export const uploadFile = async (file: File) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -251,7 +251,14 @@ export const uploadFile = async (file: File) => {
   });
   return res.data.url; // Returns "http://localhost:5000/uploads/video-123.mp4"
 };
-
+export const updateProfile = async (id: number, data: any) => {
+  const res = await axios.put(`${API_BASE}/users/${id}/profile`, data);
+  return res.data;
+};
+export const getMe = async () => {
+  const res = await axios.get(`${API_BASE}/users/me`);
+  return res.data;
+};
 export const getSettings = async () => {
   const res = await axios.get(`${API_BASE}/settings`);
   return res.data;

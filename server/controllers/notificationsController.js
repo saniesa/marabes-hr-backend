@@ -20,7 +20,13 @@ exports.create = async (req, res) => {
       "INSERT INTO notifications (userId, message, type, isRead, createdAt) VALUES (?, ?, ?, 0, NOW())",
       [userId, message, type || 'info']
     );
-    res.json({ id: result.insertId, userId, message, type });
+        const newNotification = { id: result.insertId, userId, message, type, createdAt: new Date(), isRead: 0 };
+   if (req.io) {
+      // Send to a specific room based on userId
+      req.io.emit(`notification_${userId}`, newNotification);
+    }
+
+    res.json(newNotification);
   } catch (err) {
     console.error("Error creating notification:", err);
     res.status(500).json({ error: err.message });

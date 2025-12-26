@@ -33,14 +33,24 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<Employee | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const storedUser = localStorage.getItem("marabes_user");
+useEffect(() => {
+  const initAuth = async () => {
     const token = localStorage.getItem("marabes_token");
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+    if (token) {
+      try {
+        // 1. Fetch latest data from the database
+        const latestUser = await api.getMe(); 
+        setUser(latestUser);
+      } catch (err) {
+        console.error("Auth init failed", err);
+        logout();
+      }
     }
-    setIsLoading(false);
-  }, []);
+    // 2. Use the correct name here (setIsLoading)
+    setIsLoading(false); 
+  };
+  initAuth();
+}, []);
 
  const login = async (email: string, password: string) => {
     try {

@@ -3,6 +3,7 @@ import { Bell, Trash2, X, CheckCircle, AlertTriangle } from "lucide-react";
 import { useAuth } from "../App";
 import axios from "axios";
 import toast from 'react-hot-toast';
+import { io } from "socket.io-client";
 
 interface Notification {
   id: number;
@@ -82,10 +83,46 @@ const NotificationBell: React.FC = () => {
     }
   };
 
+   // Function to show Browser Desktop Notification
+  const showDesktopNotification = (message: string) => {
+    if (Notification.permission === "granted") {
+      new Notification("Marabes HR", {
+        body: message,
+        icon: "/logo.png" // Path to your logo
+      });
+    }
+  };
   useEffect(() => {
+     if (!user) return;
+
+    // 1. Request Browser Notification Permission
+    if (Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+
     loadNotifications();
+    // 3. Setup Socket.io Connection
+    const socket = io("http://localhost:5000");
+
+    // Listen for new notifications for THIS user specifically
+    socket.on(`notification_${user.id}`, (newNotif: Notification) => {
+      setNotifications(prev => [newNotif, ...prev]);
+      
+      // Play a sound (optional)
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+      audio.play().catch(e => console.log("Audio play blocked"));
+
+      // Show Desktop Popup
+      showDesktopNotification(newNotif.message);
+      
+      // Also show toast
+      toast.success(newNotif.message, { icon: '🔔' });
+    });
     const interval = setInterval(loadNotifications, 10000);
-    return () => clearInterval(interval);
+
+    return () =>{
+      socket.disconnect();
+    };
   }, [user]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
